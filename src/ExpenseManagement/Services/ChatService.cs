@@ -376,7 +376,7 @@ public class ChatService : IChatService
         Status IDs: 1=Draft, 2=Submitted, 3=Approved, 4=Rejected
 
         When displaying lists of expenses or data, format them clearly with relevant details.
-        For monetary amounts, remember they are stored in pence (multiply by 100 to get pounds, or divide by 100).
+        For monetary amounts, remember they are stored in pence (divide by 100 to get pounds, or multiply by 100 to convert pounds to pence).
         Always confirm with users before making changes (create, submit, approve, reject).
         Be helpful, concise, and professional.
         """;
