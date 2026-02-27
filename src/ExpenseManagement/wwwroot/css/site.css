@@ -1,0 +1,178 @@
+/* Expense Management - Custom Styles */
+
+body {
+    background-color: #f8f9fa;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+main {
+    flex: 1;
+}
+
+/* Navbar */
+.navbar-brand {
+    font-size: 1.2rem;
+    letter-spacing: 0.3px;
+}
+
+/* Cards */
+.card {
+    border: none;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    border-radius: 12px;
+    transition: box-shadow 0.2s ease;
+}
+
+.card:hover {
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+}
+
+.card-header {
+    border-radius: 12px 12px 0 0 !important;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+    background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+    font-weight: 600;
+}
+
+/* Stat Cards */
+.stat-card {
+    border-left: 4px solid;
+    border-radius: 12px !important;
+}
+
+.stat-card.border-primary { border-left-color: #0d6efd !important; }
+.stat-card.border-warning { border-left-color: #ffc107 !important; }
+.stat-card.border-success { border-left-color: #198754 !important; }
+.stat-card.border-danger  { border-left-color: #dc3545 !important; }
+
+.stat-card .stat-icon {
+    width: 56px;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 12px;
+    font-size: 1.5rem;
+}
+
+.stat-card .stat-value {
+    font-size: 2rem;
+    font-weight: 700;
+    line-height: 1.2;
+}
+
+.stat-card .stat-label {
+    font-size: 0.85rem;
+    color: #6c757d;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Status Badges */
+.badge-status-draft     { background-color: #6c757d; }
+.badge-status-submitted { background-color: #0d6efd; }
+.badge-status-approved  { background-color: #198754; }
+.badge-status-rejected  { background-color: #dc3545; }
+
+/* Table */
+.table thead th {
+    background-color: #f8f9fa;
+    font-weight: 600;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #495057;
+    border-bottom: 2px solid #dee2e6;
+}
+
+.table tbody tr:hover {
+    background-color: #f0f4ff;
+}
+
+/* Chat */
+.chat-container {
+    height: calc(100vh - 280px);
+    min-height: 400px;
+    overflow-y: auto;
+    scroll-behavior: smooth;
+}
+
+.chat-message {
+    max-width: 80%;
+    border-radius: 16px;
+    padding: 12px 16px;
+    margin-bottom: 12px;
+    line-height: 1.5;
+}
+
+.chat-message.user {
+    background-color: #0d6efd;
+    color: white;
+    margin-left: auto;
+    border-bottom-right-radius: 4px;
+}
+
+.chat-message.assistant {
+    background-color: #ffffff;
+    border: 1px solid #dee2e6;
+    border-bottom-left-radius: 4px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+}
+
+.chat-message.error {
+    background-color: #fff3cd;
+    border: 1px solid #ffc107;
+}
+
+.chat-input-area {
+    background: white;
+    border-top: 1px solid #dee2e6;
+    padding: 16px;
+    border-radius: 0 0 12px 12px;
+}
+
+/* Quick action buttons */
+.quick-action-btn {
+    text-align: left;
+    transition: all 0.2s;
+}
+
+.quick-action-btn:hover {
+    transform: translateX(4px);
+}
+
+/* Page headers */
+.page-header {
+    background: linear-gradient(135deg, #0d6efd 0%, #0056d3 100%);
+    color: white;
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 24px;
+}
+
+/* Form improvements */
+.form-control:focus,
+.form-select:focus {
+    border-color: #0d6efd;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.15);
+}
+
+/* Error banner */
+#db-error-banner {
+    border-left: 5px solid #dc3545;
+}
+
+/* Loading spinner */
+.spinner-overlay {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(255, 255, 255, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+}

@@ -1,0 +1,123 @@
+@page
+@model ExpenseManagement.Pages.Expenses.CreateModel
+@{
+    ViewData["Title"] = "New Expense";
+}
+
+<div class="container" style="max-width:700px;">
+    <div class="page-header mb-4">
+        <div>
+            <h1 class="h3 mb-1 fw-bold"><i class="bi bi-plus-circle me-2"></i>New Expense</h1>
+            <p class="mb-0 opacity-75">Submit a new expense claim</p>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-body p-4">
+            <form method="post">
+                <div class="mb-3">
+                    <label asp-for="NewExpense.UserId" class="form-label fw-semibold">Employee</label>
+                    <select asp-for="NewExpense.UserId" asp-items="Model.Users" class="form-select">
+                        <option value="">-- Select Employee --</option>
+                    </select>
+                    <span asp-validation-for="NewExpense.UserId" class="text-danger small"></span>
+                </div>
+
+                <div class="row g-3 mb-3">
+                    <div class="col-sm-6">
+                        <label asp-for="NewExpense.CategoryId" class="form-label fw-semibold">Category</label>
+                        <select asp-for="NewExpense.CategoryId" asp-items="Model.Categories" class="form-select">
+                            <option value="">-- Select Category --</option>
+                        </select>
+                        <span asp-validation-for="NewExpense.CategoryId" class="text-danger small"></span>
+                    </div>
+                    <div class="col-sm-6">
+                        <label asp-for="NewExpense.ExpenseDate" class="form-label fw-semibold">Expense Date</label>
+                        <input asp-for="NewExpense.ExpenseDate" type="date" class="form-control" />
+                        <span asp-validation-for="NewExpense.ExpenseDate" class="text-danger small"></span>
+                    </div>
+                </div>
+
+                <div class="row g-3 mb-3">
+                    <div class="col-sm-8">
+                        <label class="form-label fw-semibold">Amount (£)</label>
+                        <div class="input-group">
+                            <span class="input-group-text">£</span>
+                            <input type="number" id="amountInput" class="form-control" placeholder="0.00"
+                                   step="0.01" min="0.01" max="99999.99" required />
+                        </div>
+                        <input asp-for="NewExpense.AmountMinor" type="hidden" id="amountMinorInput" />
+                        <span asp-validation-for="NewExpense.AmountMinor" class="text-danger small"></span>
+                        <div class="form-text">Enter amount in pounds (e.g., 25.40 for £25.40)</div>
+                    </div>
+                    <div class="col-sm-4">
+                        <label asp-for="NewExpense.Currency" class="form-label fw-semibold">Currency</label>
+                        <select asp-for="NewExpense.Currency" class="form-select">
+                            <option value="GBP">GBP (£)</option>
+                            <option value="USD">USD ($)</option>
+                            <option value="EUR">EUR (€)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="NewExpense.Description" class="form-label fw-semibold">Description</label>
+                    <textarea asp-for="NewExpense.Description" class="form-control" rows="3"
+                              placeholder="Brief description of the expense..."></textarea>
+                </div>
+
+                <div class="mb-4">
+                    <label asp-for="NewExpense.ReceiptFile" class="form-label fw-semibold">
+                        Receipt Reference <span class="text-muted fw-normal">(optional)</span>
+                    </label>
+                    <input asp-for="NewExpense.ReceiptFile" class="form-control"
+                           placeholder="e.g., /receipts/taxi_oct20.jpg" />
+                </div>
+
+                @if (!ViewData.ModelState.IsValid && ViewData.ModelState.ErrorCount > 0)
+                {
+                    <div class="alert alert-danger">
+                        <i class="bi bi-exclamation-triangle me-2"></i>
+                        @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+                        {
+                            <span>@error.ErrorMessage</span>
+                        }
+                    </div>
+                }
+
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-check2 me-1"></i>Create Expense
+                    </button>
+                    <a asp-page="/Expenses/Index" class="btn btn-outline-secondary">
+                        <i class="bi bi-x me-1"></i>Cancel
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Convert pounds to pence before submission
+        document.querySelector('form').addEventListener('submit', function(e) {
+            const amountInput = document.getElementById('amountInput');
+            const amountMinorInput = document.getElementById('amountMinorInput');
+            const pounds = parseFloat(amountInput.value);
+            if (!isNaN(pounds) && pounds > 0) {
+                amountMinorInput.value = Math.round(pounds * 100);
+            } else {
+                e.preventDefault();
+                amountInput.setCustomValidity('Please enter a valid amount');
+                amountInput.reportValidity();
+            }
+        });
+
+        // Pre-populate if editing
+        const existing = document.getElementById('amountMinorInput').value;
+        if (existing && existing > 0) {
+            document.getElementById('amountInput').value = (parseInt(existing) / 100).toFixed(2);
+        }
+    </script>
+}

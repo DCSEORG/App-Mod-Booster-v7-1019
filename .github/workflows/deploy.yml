@@ -1,0 +1,76 @@
+name: Deploy to Azure
+
+on:
+  workflow_dispatch:
+    inputs:
+      resourceGroup:
+        description: 'Azure Resource Group name'
+        required: true
+        type: string
+      location:
+        description: 'Azure region'
+        required: false
+        default: 'uksouth'
+        type: string
+      deployGenAI:
+        description: 'Deploy GenAI resources (Azure OpenAI + AI Search)'
+        required: false
+        default: 'false'
+        type: string
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Azure Login (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Install go-sqlcmd
+        run: |
+          curl -sSL -o sqlcmd.tar.bz2 https://github.com/microsoft/go-sqlcmd/releases/download/v1.8.0/sqlcmd-linux-amd64.tar.bz2
+          sudo tar -xjf sqlcmd.tar.bz2 -C /usr/local/bin
+          sqlcmd --version
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Deploy Infrastructure
+        shell: pwsh
+        env:
+          AZURE_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
+        run: |
+          $deployGenAI = "${{ github.event.inputs.deployGenAI }}" -eq "true"
+          if ($deployGenAI) {
+            ./deploy-infra/deploy.ps1 `
+              -ResourceGroup "${{ github.event.inputs.resourceGroup }}" `
+              -Location "${{ github.event.inputs.location }}" `
+              -DeployGenAI
+          } else {
+            ./deploy-infra/deploy.ps1 `
+              -ResourceGroup "${{ github.event.inputs.resourceGroup }}" `
+              -Location "${{ github.event.inputs.location }}"
+          }
+
+      - name: Wait for App Service to stabilize
+        run: |
+          echo "Waiting 60 seconds for App Service settings to apply..."
+          sleep 60
+
+      - name: Deploy Application
+        shell: pwsh
+        run: ./deploy-app/deploy.ps1
