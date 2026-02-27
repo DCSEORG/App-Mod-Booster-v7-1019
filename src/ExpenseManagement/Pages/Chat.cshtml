@@ -1,0 +1,286 @@
+@page
+@model ExpenseManagement.Pages.ChatModel
+@{
+    ViewData["Title"] = "AI Assistant";
+}
+
+<div class="container-fluid">
+    <div class="page-header mb-4">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h1 class="h3 mb-1 fw-bold"><i class="bi bi-chat-dots me-2"></i>AI Assistant</h1>
+                <p class="mb-0 opacity-75">Natural language interface for expense management</p>
+            </div>
+            @if (!Model.IsOpenAIConfigured)
+            {
+                <span class="badge bg-warning text-dark fs-6">
+                    <i class="bi bi-exclamation-triangle me-1"></i>AI Not Configured
+                </span>
+            }
+            else
+            {
+                <span class="badge bg-success fs-6">
+                    <i class="bi bi-check2-circle me-1"></i>AI Ready
+                </span>
+            }
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- Chat Area -->
+        <div class="col-lg-8">
+            <div class="card" style="border-radius:12px;">
+                <!-- Messages -->
+                <div class="card-body p-3 chat-container" id="chatMessages">
+                    <!-- Welcome message -->
+                    <div class="d-flex gap-2 mb-3">
+                        <div class="flex-shrink-0">
+                            <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center"
+                                 style="width:36px;height:36px;">
+                                <i class="bi bi-robot"></i>
+                            </div>
+                        </div>
+                        @if (Model.IsOpenAIConfigured)
+                        {
+                            <div class="chat-message assistant">
+                                <strong>Hello! I'm your expense management assistant.</strong>
+                                <p class="mb-1 mt-1">I can help you with:</p>
+                                <ul class="mb-1">
+                                    <li>View and filter expenses</li>
+                                    <li>Create new expense records</li>
+                                    <li>Check expense statistics</li>
+                                    <li>Submit, approve, or reject expenses</li>
+                                </ul>
+                                <span class="text-muted small">Try: &ldquo;Show me all submitted expenses&rdquo; or &ldquo;What&apos;s the total amount of approved expenses?&rdquo;</span>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="chat-message assistant">
+                                <strong>Azure OpenAI is not configured.</strong>
+                                <p class="mb-1 mt-1">To enable the AI assistant, deploy with the <code>-DeployGenAI</code> switch:</p>
+                                <pre class="mb-1 p-2 bg-light rounded small">.\deploy-infra\deploy.ps1 -ResourceGroup "rg-yourapp" -Location "uksouth" -DeployGenAI</pre>
+                                <span class="text-muted small">The chat UI is ready &mdash; it just needs an Azure OpenAI endpoint to connect to.</span>
+                            </div>
+                        }
+                    </div>
+                </div>
+
+                <!-- Input Area -->
+                <div class="chat-input-area">
+                    <div class="d-flex gap-2">
+                        <input type="text" id="messageInput" class="form-control"
+                               placeholder="@(Model.IsOpenAIConfigured ? "Ask something... e.g. 'Show me pending expenses'" : "AI not configured — see instructions above")"
+                               @(Model.IsOpenAIConfigured ? "" : "disabled")
+                               autocomplete="off" />
+                        <button id="sendBtn" class="btn btn-primary px-3"
+                                @(Model.IsOpenAIConfigured ? "" : "disabled")
+                                title="Send message">
+                            <i class="bi bi-send-fill"></i>
+                        </button>
+                    </div>
+                    <div class="text-muted small mt-1">
+                        Press <kbd>Enter</kbd> to send &bull; <span id="statusIndicator"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Suggestions -->
+        <div class="col-lg-4">
+            <div class="card mb-3">
+                <div class="card-header py-3">
+                    <h5 class="mb-0"><i class="bi bi-lightbulb me-2 text-warning"></i>Example Queries</h5>
+                </div>
+                <div class="card-body d-grid gap-2">
+                    @{
+                        var suggestions = new[]
+                        {
+                            ("bi-list-ul", "Show me all expenses"),
+                            ("bi-clock-history", "List submitted expenses pending approval"),
+                            ("bi-bar-chart", "What are the expense stats?"),
+                            ("bi-check2-circle", "Show approved expenses this month"),
+                            ("bi-people", "List all users"),
+                            ("bi-tags", "What expense categories are available?")
+                        };
+                    }
+                    @foreach (var (icon, text) in suggestions)
+                    {
+                        <button class="btn btn-outline-secondary btn-sm text-start suggestion-btn quick-action-btn"
+                                @(Model.IsOpenAIConfigured ? "" : "disabled")>
+                            <i class="bi @icon me-2"></i>@text
+                        </button>
+                    }
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header py-3">
+                    <h5 class="mb-0"><i class="bi bi-info-circle me-2 text-primary"></i>Capabilities</h5>
+                </div>
+                <div class="card-body">
+                    <ul class="list-unstyled mb-0 small">
+                        <li class="mb-2"><i class="bi bi-check2 text-success me-2"></i>Query expenses and users</li>
+                        <li class="mb-2"><i class="bi bi-check2 text-success me-2"></i>Create new expenses</li>
+                        <li class="mb-2"><i class="bi bi-check2 text-success me-2"></i>Submit for approval</li>
+                        <li class="mb-2"><i class="bi bi-check2 text-success me-2"></i>Approve or reject expenses</li>
+                        <li class="mb-2"><i class="bi bi-check2 text-success me-2"></i>View statistics</li>
+                        <li class="mb-0"><i class="bi bi-check2 text-success me-2"></i>Natural language interface</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        const chatMessages = document.getElementById('chatMessages');
+        const messageInput = document.getElementById('messageInput');
+        const sendBtn = document.getElementById('sendBtn');
+        const statusIndicator = document.getElementById('statusIndicator');
+        let conversationHistory = [];
+
+        function escapeHtml(text) {
+            const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
+            return text.replace(/[&<>"']/g, m => map[m]);
+        }
+
+        function formatMessage(text) {
+            // 1. Escape HTML first for security
+            let escaped = escapeHtml(text);
+            // 2. Apply markdown-style formatting
+            escaped = escaped
+                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                .replace(/\*(.*?)\*/g, '<em>$1</em>')
+                .replace(/`([^`]+)`/g, '<code>$1</code>');
+            // 3. Convert numbered lists
+            const lines = escaped.split('\n');
+            let html = '';
+            let inOl = false, inUl = false;
+            for (const line of lines) {
+                if (/^\d+\.\s/.test(line)) {
+                    if (!inOl) { html += '<ol>'; inOl = true; }
+                    if (inUl) { html += '</ul>'; inUl = false; }
+                    html += `<li>${line.replace(/^\d+\.\s/, '')}</li>`;
+                } else if (/^[-*]\s/.test(line)) {
+                    if (!inUl) { html += '<ul>'; inUl = true; }
+                    if (inOl) { html += '</ol>'; inOl = false; }
+                    html += `<li>${line.replace(/^[-*]\s/, '')}</li>`;
+                } else {
+                    if (inOl) { html += '</ol>'; inOl = false; }
+                    if (inUl) { html += '</ul>'; inUl = false; }
+                    html += line ? `${line}<br>` : '<br>';
+                }
+            }
+            if (inOl) html += '</ol>';
+            if (inUl) html += '</ul>';
+            return html;
+        }
+
+        function appendMessage(role, content, isError = false) {
+            const msgDiv = document.createElement('div');
+            msgDiv.className = 'd-flex gap-2 mb-3' + (role === 'user' ? ' flex-row-reverse' : '');
+
+            const avatar = document.createElement('div');
+            avatar.className = 'flex-shrink-0';
+            const avatarInner = document.createElement('div');
+            avatarInner.className = `rounded-circle d-flex align-items-center justify-content-center ${role === 'user' ? 'bg-secondary' : 'bg-primary'} text-white`;
+            avatarInner.style.cssText = 'width:36px;height:36px;';
+            avatarInner.innerHTML = `<i class="bi bi-${role === 'user' ? 'person' : 'robot'}"></i>`;
+            avatar.appendChild(avatarInner);
+
+            const bubble = document.createElement('div');
+            bubble.className = `chat-message ${role === 'user' ? 'user' : isError ? 'error' : 'assistant'}`;
+            bubble.innerHTML = formatMessage(content);
+
+            msgDiv.appendChild(avatar);
+            msgDiv.appendChild(bubble);
+            chatMessages.appendChild(msgDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        function showTyping() {
+            const div = document.createElement('div');
+            div.id = 'typingIndicator';
+            div.className = 'd-flex gap-2 mb-3';
+            div.innerHTML = `
+                <div class="flex-shrink-0">
+                    <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center" style="width:36px;height:36px;">
+                        <i class="bi bi-robot"></i>
+                    </div>
+                </div>
+                <div class="chat-message assistant d-flex align-items-center gap-1">
+                    <span class="spinner-border spinner-border-sm" role="status"></span>
+                    <span class="text-muted">Thinking...</span>
+                </div>`;
+            chatMessages.appendChild(div);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        function hideTyping() {
+            const indicator = document.getElementById('typingIndicator');
+            if (indicator) indicator.remove();
+        }
+
+        async function sendMessage() {
+            const message = messageInput.value.trim();
+            if (!message) return;
+
+            messageInput.value = '';
+            sendBtn.disabled = true;
+            statusIndicator.textContent = 'Sending...';
+
+            appendMessage('user', message);
+            conversationHistory.push({ role: 'user', content: message });
+            showTyping();
+
+            try {
+                const response = await fetch('/Chat?handler=', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value || ''
+                    },
+                    body: JSON.stringify({ message, history: conversationHistory.slice(-10) })
+                });
+
+                hideTyping();
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+
+                const data = await response.json();
+                const replyText = data.message || 'No response';
+                appendMessage('assistant', replyText, !data.success);
+                conversationHistory.push({ role: 'assistant', content: replyText });
+                statusIndicator.textContent = '';
+            } catch (err) {
+                hideTyping();
+                appendMessage('assistant', `Error: ${err.message}`, true);
+                statusIndicator.textContent = 'Error';
+            } finally {
+                sendBtn.disabled = false;
+                messageInput.focus();
+            }
+        }
+
+        sendBtn.addEventListener('click', sendMessage);
+        messageInput.addEventListener('keydown', e => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+
+        // Suggestion buttons
+        document.querySelectorAll('.suggestion-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                messageInput.value = btn.textContent.trim().replace(/^.*?\s/, '');
+                messageInput.focus();
+            });
+        });
+    </script>
+    @Html.AntiForgeryToken()
+}

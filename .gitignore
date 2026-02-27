@@ -1,0 +1,21 @@
+## Build artifacts
+**/bin/
+**/obj/
+
+## .NET
+*.user
+*.suo
+*.vs/
+
+## Deployment
+deploy-app/publish/
+deploy-app/app.zip
+.deployment-context.json
+
+## Environment / secrets
+.env
+*.env
+
+## OS
+.DS_Store
+Thumbs.db

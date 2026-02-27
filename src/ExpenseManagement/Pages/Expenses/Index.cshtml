@@ -1,0 +1,109 @@
+@page
+@model ExpenseManagement.Pages.Expenses.ExpensesIndexModel
+@{
+    ViewData["Title"] = "Expenses";
+}
+
+<div class="container-fluid">
+    <div class="page-header mb-4">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h1 class="h3 mb-1 fw-bold"><i class="bi bi-list-ul me-2"></i>Expenses</h1>
+                <p class="mb-0 opacity-75">Manage and track all expense claims</p>
+            </div>
+            <a asp-page="/Expenses/Create" class="btn btn-light">
+                <i class="bi bi-plus-circle me-1"></i>New Expense
+            </a>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="card mb-4">
+        <div class="card-body py-2">
+            <div class="d-flex gap-2 flex-wrap align-items-center">
+                <span class="text-muted small fw-medium me-2"><i class="bi bi-funnel me-1"></i>Filter:</span>
+                <a asp-page="/Expenses/Index" class="btn btn-sm @(Model.FilterStatus == null ? "btn-primary" : "btn-outline-secondary")">All</a>
+                <a asp-page="/Expenses/Index" asp-route-status="draft" class="btn btn-sm @(Model.FilterStatus == "draft" ? "btn-secondary" : "btn-outline-secondary")">Draft</a>
+                <a asp-page="/Expenses/Index" asp-route-status="submitted" class="btn btn-sm @(Model.FilterStatus == "submitted" ? "btn-primary" : "btn-outline-primary")">Submitted</a>
+                <a asp-page="/Expenses/Index" asp-route-status="approved" class="btn btn-sm @(Model.FilterStatus == "approved" ? "btn-success" : "btn-outline-success")">Approved</a>
+                <a asp-page="/Expenses/Index" asp-route-status="rejected" class="btn btn-sm @(Model.FilterStatus == "rejected" ? "btn-danger" : "btn-outline-danger")">Rejected</a>
+                <span class="ms-auto text-muted small">@Model.Expenses.Count expense(s)</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-body p-0">
+            @if (Model.Expenses.Any())
+            {
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Employee</th>
+                                <th>Description</th>
+                                <th>Category</th>
+                                <th>Amount</th>
+                                <th>Status</th>
+                                <th>Date</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var expense in Model.Expenses)
+                            {
+                                <tr>
+                                    <td class="text-muted small">@expense.ExpenseId</td>
+                                    <td>
+                                        <div class="d-flex align-items-center gap-2">
+                                            <div class="avatar-sm rounded-circle bg-primary bg-opacity-10 text-primary d-flex align-items-center justify-content-center"
+                                                 style="width:32px;height:32px;font-size:.8rem;font-weight:600;">
+                                                @expense.UserName[0]
+                                            </div>
+                                            <span class="small fw-medium">@expense.UserName</span>
+                                        </div>
+                                    </td>
+                                    <td class="fw-medium">@(expense.Description ?? "—")</td>
+                                    <td>
+                                        <span class="badge bg-secondary bg-opacity-10 text-secondary">@expense.CategoryName</span>
+                                    </td>
+                                    <td class="fw-semibold text-end">@expense.AmountFormatted</td>
+                                    <td>
+                                        <span class="badge badge-status-@expense.StatusName.ToLower() text-white">
+                                            @expense.StatusName
+                                        </span>
+                                    </td>
+                                    <td class="text-muted small">@expense.ExpenseDate.ToString("dd MMM yyyy")</td>
+                                    <td>
+                                        <div class="d-flex gap-1">
+                                            <a asp-page="/Expenses/Details" asp-route-id="@expense.ExpenseId"
+                                               class="btn btn-sm btn-outline-secondary" title="View">
+                                                <i class="bi bi-eye"></i>
+                                            </a>
+                                            @if (expense.StatusName == "Submitted")
+                                            {
+                                                <a asp-page="/Expenses/Approve" asp-route-id="@expense.ExpenseId"
+                                                   class="btn btn-sm btn-outline-warning" title="Review">
+                                                    <i class="bi bi-check2"></i>
+                                                </a>
+                                            }
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <div class="text-center py-5 text-muted">
+                    <i class="bi bi-inbox display-4 d-block mb-2"></i>
+                    <p>No expenses found.</p>
+                    <a asp-page="/Expenses/Create" class="btn btn-primary">Add First Expense</a>
+                </div>
+            }
+        </div>
+    </div>
+</div>
